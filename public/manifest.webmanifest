@@ -1,0 +1,10 @@
+{
+  "name": "Cancel Vulture",
+  "short_name": "CV",
+  "description": "Pick apart your subscriptions. Take back your money.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
