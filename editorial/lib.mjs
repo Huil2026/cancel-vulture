@@ -47,7 +47,7 @@ function extractOutputText(response) {
 }
 
 export async function askOpenAI({ name, schema, prompt, webSearch = false }) {
-  if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required");
+  if (!process.env.OPENAI_API_KEY) throw new Error("AI generation is disabled because OPENAI_API_KEY is not configured");
   const response = await fetchWithRetry("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
@@ -60,6 +60,38 @@ export async function askOpenAI({ name, schema, prompt, webSearch = false }) {
     }),
   });
   return JSON.parse(extractOutputText(await response.json()));
+}
+
+const manualRequiredFields = [
+  "title", "searchIntent", "summaryAnswer", "currentPrice", "cancellationDifficulty", "numberOfSteps",
+  "beforeYouCancelWarnings", "cancellationInstructions", "afterCancellation", "refundInformation",
+  "commonProblems", "alternatives", "internalLinks", "sources", "lastVerified", "callToAction",
+  "seoTitle", "metaDescription", "faq", "featuredImageBrief", "priceHistory", "renewalWarnings",
+  "earlyTerminationFees", "userReportedIssues", "timeSensitive", "effectiveDate",
+];
+
+export function validateManualArticle(article, database = { articles: [] }) {
+  const errors = [];
+  if (!article || typeof article !== "object" || Array.isArray(article)) return ["Article must be a JSON object"];
+  for (const field of manualRequiredFields) if (!(field in article)) errors.push(`Missing required field: ${field}`);
+  if (!article.title?.trim()) errors.push("Title is required");
+  if (/^replace with/i.test(article.title || "") || /^replace-with/i.test(article.slug || "")) errors.push("Template placeholders must be replaced");
+  if (!article.searchIntent?.trim()) errors.push("Search intent is required");
+  if (!article.summaryAnswer?.trim()) errors.push("Summary answer is required");
+  if (!Array.isArray(article.cancellationInstructions) || !article.cancellationInstructions.length) errors.push("At least one cancellation instruction is required");
+  if (!Array.isArray(article.sources) || !article.sources.length) errors.push("At least one official source is required");
+  for (const source of article.sources || []) {
+    if (!isOfficialUrl(source.url)) errors.push(`Source is outside the official-domain registry: ${source.url || "missing URL"}`);
+    if (!Array.isArray(source.claims) || !source.claims.length) errors.push(`Source requires extracted claims: ${source.url || "missing URL"}`);
+    if ((source.claims || []).some(claim => /^replace this/i.test(claim))) errors.push(`Source claim placeholder must be replaced: ${source.url || "missing URL"}`);
+  }
+  for (const link of article.internalLinks || []) if (!link.startsWith("/")) errors.push(`Internal link must be root-relative: ${link}`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(article.lastVerified || "")) errors.push("lastVerified must be YYYY-MM-DD");
+  if (article.timeSensitive && !/^\d{4}-\d{2}-\d{2}$/.test(article.effectiveDate || "")) errors.push("Time-sensitive articles require effectiveDate in YYYY-MM-DD format");
+  const candidate = { ...article, slug: slugify(article.slug || article.title) };
+  const duplicate = findDuplicate(candidate, (database.articles || []).filter(item => item.slug !== candidate.slug));
+  if (duplicate) errors.push(`Overlapping search intent with existing article: ${duplicate.slug}`);
+  return errors;
 }
 
 export async function readJson(path, fallback) {

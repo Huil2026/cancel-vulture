@@ -1,0 +1,45 @@
+name: Vulture Watch manual article
+
+on:
+  workflow_dispatch:
+    inputs:
+      article_path:
+        description: Path to a completed manual article JSON file in this repository
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-manual-article:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prepare manual article
+        env:
+          ARTICLE_PATH: ${{ inputs.article_path }}
+        run: npm run editorial:manual -- "$ARTICLE_PATH"
+      - run: npm run editorial:validate
+      - run: npm test
+      - name: Open manual-review PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          branch="editorial/manual-${GITHUB_RUN_ID}"
+          git config user.name "cancel-vulture-editorial-bot"
+          git config user.email "editorial-bot@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add content/vulture-watch app/vulture-watch/generated.ts
+          git commit -m "Add manually prepared Vulture Watch article"
+          git push origin "$branch"
+          gh pr create --draft --base "${GITHUB_REF_NAME}" --head "$branch" --title "Vulture Watch: manual editorial candidate" --body "Manual article prepared without AI generation. Verify every source claim, price, date, fee, refund statement and cancellation step before approval."

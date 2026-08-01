@@ -45,6 +45,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          if git diff --quiet -- content/vulture-watch app/vulture-watch/generated.ts; then
+            echo "No alert was generated. Configure OPENAI_API_KEY or use the manual article workflow."
+            exit 0
+          fi
           branch="automation/vulture-alert-${GITHUB_RUN_ID}"
           git config user.name "cancel-vulture-editorial-bot"
           git config user.email "editorial-bot@users.noreply.github.com"

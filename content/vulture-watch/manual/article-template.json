@@ -1,0 +1,32 @@
+{
+  "title": "Replace with the article title",
+  "slug": "replace-with-article-slug",
+  "searchIntent": "Describe the one question this article answers",
+  "summaryAnswer": "Give the concise, verified answer first.",
+  "currentPrice": null,
+  "cancellationDifficulty": "Manual verification required",
+  "numberOfSteps": 0,
+  "beforeYouCancelWarnings": [],
+  "cancellationInstructions": ["Replace this with a step verified against the official source."],
+  "afterCancellation": [],
+  "refundInformation": "Manual verification required",
+  "commonProblems": [],
+  "alternatives": [],
+  "internalLinks": ["/vulture-watch"],
+  "sources": [{
+    "url": "https://help.netflix.com/",
+    "claims": ["Replace this with the exact factual claim supported by this official page."]
+  }],
+  "lastVerified": "YYYY-MM-DD",
+  "callToAction": "Scan your subscriptions with Cancel Vulture.",
+  "seoTitle": "Replace with an SEO title",
+  "metaDescription": "Replace with a useful, accurate description of the article.",
+  "faq": [],
+  "featuredImageBrief": "Describe a Cancel Vulture image without third-party logos unless permitted.",
+  "priceHistory": [],
+  "renewalWarnings": [],
+  "earlyTerminationFees": "Manual verification required",
+  "userReportedIssues": [],
+  "timeSensitive": false,
+  "effectiveDate": null
+}

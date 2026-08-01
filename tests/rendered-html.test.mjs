@@ -27,5 +27,7 @@ test("server-renders the editorial dashboard with quality guardrails", async () 
   assert.match(html, /Vulture Watch/);
   assert.match(html, /No source, no story/);
   assert.match(html, /Manual merge approval required/);
-  assert.match(html, /Maximum five per daily run/);
+  assert.match(html, /Manual publishing/);
+  assert.match(html, /microsoft-clarity/);
+  assert.match(html, /GoogleAnalytics/);
 });

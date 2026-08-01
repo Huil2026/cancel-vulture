@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deterministicReview, findDuplicate, isOfficialUrl, similarity, slugify } from "../editorial/lib.mjs";
+import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { deterministicReview, findDuplicate, isOfficialUrl, similarity, slugify, validateManualArticle } from "../editorial/lib.mjs";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
 
 test("duplicate detection catches overlapping search intent", () => {
   const existing = [{ title: "How to cancel Netflix", slug: "how-to-cancel-netflix", searchIntent: "cancel a Netflix subscription" }];
@@ -21,4 +26,27 @@ test("quality gate rejects unsupported source records", () => {
   assert.ok(reasons.includes("invalid_or_insufficient_official_sources"));
   assert.ok(reasons.includes("source_without_extracted_claims"));
   assert.ok(reasons.includes("claim_not_found_in_retrieved_source_text"));
+});
+
+test("manual article template is structurally complete but cannot be published with placeholders", async () => {
+  const template = JSON.parse(await readFile(new URL("../content/vulture-watch/manual/article-template.json", import.meta.url), "utf8"));
+  const errors = validateManualArticle(template, { articles: [] });
+  assert.ok(errors.includes("Template placeholders must be replaced"));
+  assert.ok(errors.includes("lastVerified must be YYYY-MM-DD"));
+});
+
+test("AI pipeline exits successfully when OPENAI_API_KEY is absent", () => {
+  const env = { ...process.env };
+  delete env.OPENAI_API_KEY;
+  const result = spawnSync(process.execPath, ["editorial/pipeline.mjs"], { cwd: root, env, encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /AI discovery and drafting were skipped/);
+});
+
+test("Vulture Watch reuses the existing sitewide analytics IDs", async () => {
+  const analytics = await readFile(new URL("../app/analytics.tsx", import.meta.url), "utf8");
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  assert.match(analytics, /G-92CECJG5CY/);
+  assert.match(layout, /xsktlxsem4/);
+  assert.match(layout, /<GoogleAnalytics \/>/);
 });

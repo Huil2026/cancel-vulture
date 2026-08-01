@@ -20,7 +20,7 @@ export default function VultureWatchDashboard() {
 
       <section className="watch-dashboard">
         <div className="watch-metrics">
-          <article><span>Drafts generated</span><strong>{editorialState.generated}</strong><small>Maximum five per daily run</small></article>
+          <article><span>Drafts prepared</span><strong>{editorialState.generated}</strong><small>Manual-first, with optional AI assistance</small></article>
           <article><span>Quality approved</span><strong>{editorialState.approved}</strong><small>Minimum score: 78</small></article>
           <article><span>Rejected</span><strong>{editorialState.rejected}</strong><small>Duplicates and unsupported claims</small></article>
           <article><span>Ready to publish</span><strong>{articles.filter(item => item.publicationStatus === "draft_pr").length}</strong><small>Manual merge approval required</small></article>
@@ -28,18 +28,18 @@ export default function VultureWatchDashboard() {
 
         <div className="watch-grid">
           <section className="watch-panel watch-queue">
-            <div className="watch-heading"><div><span className="eyebrow">TODAY'S QUEUE</span><h2>Editorial review</h2></div><span className="watch-schedule">Daily · 5:15 AM COT</span></div>
+            <div className="watch-heading"><div><span className="eyebrow">EDITORIAL QUEUE</span><h2>Editorial review</h2></div><span className="watch-schedule">Manual publishing · AI optional</span></div>
             {drafts.length ? drafts.map((draft, index) => <article className="watch-row" key={`${draft.title}-${index}`}>
               <span className={`watch-status ${draft.status}`}>{draft.status.replaceAll("_", " ")}</span>
               <div><strong>{draft.title}</strong><small>{"lastVerified" in draft ? `Verified ${draft.lastVerified}` : "Awaiting verification"}</small></div>
               <div className="watch-score"><b>{draft.qualityScore}</b><span>/100</span></div>
               <span className="watch-source-count">{"sources" in draft ? draft.sources : 0} sources</span>
-            </article>) : <div className="watch-empty"><b>The nest is ready.</b><p>The first scheduled run will place up to five researched drafts here. Only the strongest approved article advances to a draft pull request.</p></div>}
+            </article>) : <div className="watch-empty"><b>The nest is ready.</b><p>Add a reviewed article with the manual template whenever your publishing schedule calls for it. Optional AI discovery can be enabled later without changing the publishing flow.</p></div>}
           </section>
 
           <aside className="watch-panel watch-rules">
             <span className="eyebrow">AUTOMATIC GUARDRAILS</span><h2>No source, no story.</h2>
-            <ul><li>Official sources prioritized and checked</li><li>Claim-level evidence ledger</li><li>Duplicate search-intent rejection</li><li>Prices and dates must be current</li><li>Broken internal links fail review</li><li>One standard article maximum per run</li><li>Manual approval before initial launch merges</li></ul>
+            <ul><li>Manual publishing works without an API key</li><li>Official sources and claim-level evidence</li><li>Duplicate search-intent rejection</li><li>Prices and dates must be current</li><li>Broken internal links fail review</li><li>AI drafting stays off when unconfigured</li><li>Manual approval before initial launch merges</li></ul>
           </aside>
         </div>
 

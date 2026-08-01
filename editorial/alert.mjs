@@ -1,6 +1,11 @@
 import { articleSchema, reviewSchema } from "./schemas.mjs";
 import { askOpenAI, deterministicReview, generateDashboardData, isOfficialUrl, readJson, slugify, today, validateSources, writeJson } from "./lib.mjs";
 
+if (!process.env.OPENAI_API_KEY) {
+  console.log("OPENAI_API_KEY is not set. AI price-alert drafting was skipped; use the manual article workflow instead.");
+  process.exit(0);
+}
+
 const officialUrl = process.env.ALERT_OFFICIAL_URL;
 const effectiveDate = process.env.ALERT_EFFECTIVE_DATE;
 const company = process.env.ALERT_COMPANY;

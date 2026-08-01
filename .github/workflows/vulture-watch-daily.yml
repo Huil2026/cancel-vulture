@@ -26,7 +26,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Research, draft and review
+      - name: Optional AI research, drafting and review
         run: npm run editorial:daily
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -48,7 +48,7 @@ jobs:
         shell: bash
         run: |
           if git diff --quiet -- content/vulture-watch app/vulture-watch/generated.ts; then
-            echo "No approved draft selected."
+            echo "No approved draft selected. This is expected when OPENAI_API_KEY is not configured."
             exit 0
           fi
           branch="automation/vulture-watch-${GITHUB_RUN_ID}"

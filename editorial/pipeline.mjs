@@ -8,6 +8,14 @@ const database = await readJson(databasePath, { articles: [] });
 const run = { lastRun: new Date().toISOString(), status: "running", generated: 0, approved: 0, rejected: 0, selectedSlug: null, drafts: [], errors: [] };
 await mkdir(".editorial-output/drafts", { recursive: true });
 
+if (!process.env.OPENAI_API_KEY) {
+  run.status = "manual_mode";
+  run.lastRun = null;
+  await writeJson(".editorial-output/run.json", run);
+  console.log("OPENAI_API_KEY is not set. AI discovery and drafting were skipped; manual publishing remains available.");
+  process.exit(0);
+}
+
 try {
   const discovery = await askOpenAI({
     name: "vulture_watch_discovery", schema: discoverySchema, webSearch: true,
