@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Usage = "Daily" | "Weekly" | "Monthly" | "Rarely" | "Never" | "Unsure";
 type Billing = "monthly" | "annual";
-type View = "home" | "select" | "damage" | "usage" | "bones" | "savings";
+type View = "home" | "select" | "damage" | "usage" | "bones" | "savings" | "hall";
 
 type Subscription = {
   id: string;
@@ -20,6 +20,7 @@ type Subscription = {
   alternative: string;
   selected: boolean;
   cancelled?: boolean;
+  decision?: "keep" | "replace" | "save";
 };
 
 const seedSubscriptions: Subscription[] = [
@@ -51,6 +52,7 @@ const views: { id: View; label: string; icon: string }[] = [
   { id: "damage", label: "Damage", icon: "$" },
   { id: "bones", label: "Pick Bones", icon: "✂" },
   { id: "savings", label: "Savings", icon: "↗" },
+  { id: "hall", label: "Hall of Shame", icon: "♛" },
 ];
 
 const money = (value: number) => value.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -109,6 +111,10 @@ export default function Home() {
     setView("savings");
   }
 
+  function setDecision(id: string, decision: "keep" | "replace" | "save") {
+    setSubs(current => current.map(s => s.id === id ? { ...s, decision } : s));
+  }
+
   function addCustom(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -123,11 +129,12 @@ export default function Home() {
     <main className="app-shell">
       <header className="topbar">
         <button className="brand" onClick={() => setView("home")} aria-label="Cancel Vulture home">
-          <span className="brand-bird">♛</span>
+          <img className="brand-bird" src="/cancel-vulture-icon.png" alt="" />
           <span><b>CANCEL</b><strong>VULTURE</strong></span>
         </button>
         <nav className="desktop-nav" aria-label="Primary navigation">
           {views.map(item => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}>{item.label}</button>)}
+          <a href="/vulture-watch">Vulture Watch</a>
         </nav>
         <div className="top-actions"><span className={saved ? "save-dot show" : "save-dot"}>Saved</span><button className="avatar">WG</button></div>
       </header>
@@ -145,8 +152,7 @@ export default function Home() {
             <div className="trust-row"><span>✓ No bank connection</span><span>✓ Your data stays local</span><span>✓ Free to use</span></div>
           </div>
           <div className="hero-art" aria-label="Cancel Vulture brand artwork">
-            <img src="/cancel-vulture-brand.png" alt="The crowned Cancel Vulture mascot holding a wallet report" />
-            <div className="hero-stat"><span>MONTHLY DRAIN</span><strong>{money(monthly)}</strong><small>{money(monthly * 12)} per year</small></div>
+            <img src="/cancel-vulture-wide-hero.png" alt="Cancel Vulture chasing away overpriced subscription characters" />
             <div className="slash slash-one" /><div className="slash slash-two" />
           </div>
         </section>
@@ -166,8 +172,14 @@ export default function Home() {
               {recommendation && <><Logo sub={recommendation}/><button className="button yellow" onClick={() => { setGuide(recommendation); setView("bones"); }}>Pick this bone →</button></>}
             </article>
             <article className="waste-card"><div className="scissors">✂</div><div><span className="eyebrow">LOW-VALUE SPEND</span><h3>{money(lowValueTotal)} <small>/ month</small></h3><p>is going to subscriptions you rarely or never use.</p></div><button className="button green" onClick={() => setView("usage")}>Review usage</button></article>
-            <article className="shame-card"><span className="eyebrow">HALL OF SHAME</span><h3>Hardest to cancel</h3>{["Adobe", "Planet Fitness", "Amazon Prime"].map((name, i) => <div className="rank" key={name}><b>{i + 1}</b><span>{name}<small>{i === 0 ? "Nightmare" : "Difficult"}</small></span><i>{[18, 24, 12][i]} min</i></div>)}</article>
+            <article className="shame-card"><span className="eyebrow">HALL OF SHAME</span><h3>Hardest to cancel</h3>{["Adobe", "Planet Fitness", "Amazon Prime"].map((name, i) => <div className="rank" key={name}><b>{i + 1}</b><span>{name}<small>{i === 0 ? "Nightmare" : "Difficult"}</small></span><i>{[18, 24, 12][i]} min</i></div>)}<button className="text-button shame-link" onClick={() => setView("hall")}>See the full ranking →</button></article>
           </div>
+
+          <section className="brand-story">
+            <div className="story-mark">CV</div>
+            <div><span className="eyebrow">THE CONSUMER WATCHDOG FOR RECURRING SPEND</span><h2>We pick apart the waste.<br /><em>You keep the money.</em></h2></div>
+            <p>Cancel Vulture is your bold, witty guide to taking back control of subscriptions. We expose what you don’t use, show the long-term damage, and help you decide what to cut—without asking for bank credentials.</p>
+          </section>
         </section>
       </>}
 
@@ -196,7 +208,20 @@ export default function Home() {
 
       {view === "bones" && <section className="workspace narrow">
         <div className="workspace-head"><div><span className="eyebrow">STEP 4 OF 4 · YOUR CANCEL LIST</span><h1>Pick the bones.</h1><p>Recommendations are based on cost, usage, replacement options, and cancellation friction.</p></div><div className="drain-pill good"><span>Potential monthly savings</span><strong>{money(lowValueTotal)}</strong></div></div>
-        <div className="cancel-list">{[...active].sort((a,b) => ((b.usage === "Never" ? 2 : b.usage === "Rarely" ? 1 : 0) * monthlyPrice(b)) - ((a.usage === "Never" ? 2 : a.usage === "Rarely" ? 1 : 0) * monthlyPrice(a))).map((sub, index) => <article className="cancel-card" key={sub.id}><span className="priority">#{index + 1}</span><Logo sub={sub}/><div className="cancel-main"><div><h3>{sub.name}</h3><span className={`difficulty ${sub.difficulty.toLowerCase()}`}>{sub.difficulty} · {sub.minutes} min</span></div><p>{sub.usage === "Never" || sub.usage === "Rarely" ? `Recommended because it costs ${money(monthlyPrice(sub))} monthly and is marked “${sub.usage}.”` : `You use this ${sub.usage.toLowerCase()}. Review before cancelling.`}</p><div className="alternative"><span>Better picking</span><b>{sub.alternative}</b></div></div><div className="cancel-money"><span>Save yearly</span><strong>{money(monthlyPrice(sub) * 12)}</strong><button className="button yellow compact" onClick={() => setGuide(sub)}>Open guide →</button></div></article>)}</div>
+        <div className="cancel-list">{[...active].sort((a,b) => ((b.usage === "Never" ? 2 : b.usage === "Rarely" ? 1 : 0) * monthlyPrice(b)) - ((a.usage === "Never" ? 2 : a.usage === "Rarely" ? 1 : 0) * monthlyPrice(a))).map((sub, index) => <article className={`cancel-card ${sub.decision ? "decided" : ""}`} key={sub.id}><span className="priority">#{index + 1}</span><Logo sub={sub}/><div className="cancel-main"><div><h3>{sub.name}</h3><span className={`difficulty ${sub.difficulty.toLowerCase()}`}>{sub.difficulty} · {sub.minutes} min</span>{sub.decision && <span className="decision-chip">{sub.decision}</span>}</div><p>{sub.usage === "Never" || sub.usage === "Rarely" ? `Recommended because it costs ${money(monthlyPrice(sub))} monthly and is marked “${sub.usage}.”` : `You use this ${sub.usage.toLowerCase()}. Review before cancelling.`}</p><div className="alternative"><span>Better picking</span><b>{sub.alternative}</b></div><div className="decision-actions"><button onClick={() => setDecision(sub.id, "keep")}>Keep</button><button onClick={() => setDecision(sub.id, "replace")}>Replace</button><button onClick={() => setDecision(sub.id, "save")}>Save for later</button></div></div><div className="cancel-money"><span>Potential recovery</span><strong>{money(monthlyPrice(sub) * 12)}<small>/yr</small></strong><button className="button yellow compact" onClick={() => setGuide(sub)}>Open guide →</button></div></article>)}</div>
+      </section>}
+
+      {view === "hall" && <section className="workspace narrow hall-view">
+        <div className="workspace-head"><div><span className="eyebrow">THE COMPANIES THAT MAKE LEAVING HARDER THAN JOINING</span><h1>Hall of Shame.</h1><p>Rankings combine cancellation steps, estimated time, online availability, retention pressure, and community reports. Examples remain estimates until independently verified.</p></div><div className="shame-seal"><b>CV</b><span>WATCHLIST</span></div></div>
+        <div className="hall-feature"><div className="mug-lines"><span>7'0”</span><span>6'0”</span><span>5'0”</span><span>4'0”</span><span>3'0”</span></div><div className="hall-copy"><span className="eyebrow">CURRENT #1</span><h2>Adobe Creative Cloud</h2><p>Multiple plan types, retention screens, and contract details can create friction. Always review the current official terms before acting.</p><div className="vulture-score"><b>18</b><span>Vulture Score<small>Nightmare</small></span></div></div></div>
+        <div className="hall-table"><div className="hall-row hall-head"><span>Rank</span><span>Company</span><span>Vulture Score</span><span>Difficulty</span><span>Est. time</span></div>{[
+          ["1", "Adobe Creative Cloud", "18", "Nightmare", "20 min"],
+          ["2", "Planet Fitness", "24", "Difficult", "25 min"],
+          ["3", "Amazon Prime", "38", "Difficult", "12 min"],
+          ["4", "Max", "54", "Annoying", "9 min"],
+          ["5", "Hulu", "58", "Annoying", "10 min"],
+        ].map(row => <div className="hall-row" key={row[0]}>{row.map((cell, i) => <span key={cell} data-label={["Rank","Company","Score","Difficulty","Time"][i]}>{cell}</span>)}</div>)}</div>
+        <div className="method-note"><b>How the ranking works</b><p>Lower scores indicate more cancellation friction. Rankings are educational, region-dependent, and should be updated whenever official processes change.</p></div>
       </section>}
 
       {view === "savings" && <section className="workspace narrow savings-view">
@@ -210,7 +235,7 @@ export default function Home() {
 
       {customOpen && <div className="modal-backdrop" onMouseDown={() => setCustomOpen(false)}><form className="custom-modal" onSubmit={addCustom} onMouseDown={e => e.stopPropagation()}><button type="button" className="modal-close" onClick={() => setCustomOpen(false)}>×</button><span className="eyebrow">ADD A MISSING SUBSCRIPTION</span><h2>Custom subscription</h2><label>Name<input required name="name" placeholder="e.g. Local gym" /></label><label>Price<input required min="0" step="0.01" name="price" type="number" placeholder="19.99" /></label><label>Billing period<select name="billing"><option value="monthly">Monthly</option><option value="annual">Annual</option></select></label><button className="button primary" type="submit">Add to my subscriptions</button></form></div>}
 
-      <nav className="mobile-nav" aria-label="Mobile navigation">{views.map(item => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><b>{item.icon}</b><span>{item.label}</span></button>)}</nav>
+      <nav className="mobile-nav" aria-label="Mobile navigation">{views.map(item => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><b>{item.icon}</b><span>{item.label}</span></button>)}<a href="/vulture-watch"><b>!</b><span>Watch</span></a></nav>
       <footer><div className="footer-brand"><b>♛ CANCEL VULTURE</b><span>Pick apart your subscriptions. Take back your money.</span></div><div><span>Estimates only · Not financial advice · Prices vary by plan and region</span><b>cancelvulture.net</b></div></footer>
     </main>
   );

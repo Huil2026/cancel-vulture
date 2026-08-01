@@ -1,90 +1,85 @@
 # Cancel Vulture
 
-Cancel Vulture is a mobile-first subscription audit app. It helps users select recurring services, understand their long-term cost, rate how often they use them, prioritize possible cancellations, and track projected savings.
-
-This folder is a complete local-source copy of the currently published Site. The application stores subscription selections and progress in the browser's local storage. It does not require a bank connection or a database for the current feature set.
-
-## Included
-
-- Next.js App Router application source
-- TypeScript and Tailwind CSS styling
-- Responsive desktop and mobile navigation
-- Progressive Web App manifest and service worker
-- Current seed catalog of 20 subscriptions
-- Subscription cost, usage, cancellation-priority, and savings flows
-- Current brand artwork and social-sharing image
-- Cloudflare/vinext worker configuration
-- Existing OpenAI Sites project linkage in `.openai/hosting.json`
-
-## Requirements
-
-- Node.js 22.13 or newer
-- npm 10 or newer
+Cancel Vulture is a subscription audit app with **Vulture Watch**, an evidence-first editorial pipeline for cancellation guides, price alerts, fee warnings, refund policies, free trials, alternatives and consumer education.
 
 ## Local setup
 
-1. Open a terminal in this folder.
-2. Install dependencies:
-
-   ```bash
-   npm ci
-   ```
-
-3. Optionally copy `.env.example` to `.env.local`. The current app does not require an environment variable to run.
-4. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-5. Open the local URL printed in the terminal.
-
-## Production build
+Requirements: Node.js 22.13 or newer.
 
 ```bash
-npm run build
-npm run start
+npm install
+npm run dev
 ```
 
-## Quality checks
+Copy `.env.example` to `.env.local` and provide your own values. Never commit `.env.local` or API keys.
 
-```bash
-npm run lint
-npm test
-```
+## Commands
 
-The test command creates a production build and performs a small rendered-output smoke test.
+- `npm run build` — production build
+- `npm test` — build plus editorial and rendered-page tests
+- `npm run editorial:daily` — discover, research, draft and review up to five topics
+- `npm run editorial:alert` — prepare a confirmed time-sensitive price alert
+- `npm run editorial:validate` — validate article records, official sources and internal links
 
-## Project structure
+## Daily editorial workflow
 
-```text
-app/                 Routes, UI, styles, layout, and service-worker registration
-public/              Brand images, social card, manifest, icons, and service worker
-build/               OpenAI Sites Vite integration
-db/                  Optional database entry point and intentionally empty schema
-drizzle/             Migration metadata
-worker/              Cloudflare Worker entry point
-tests/               Production-render smoke test
-.openai/hosting.json Existing OpenAI Sites project link and logical bindings
-```
+`.github/workflows/vulture-watch-daily.yml` runs every day at 10:15 UTC (5:15 AM Colombia time) and can also be started manually.
 
-The current subscription seed catalog lives in `app/page.tsx` as `seedSubscriptions`.
+The job:
 
-## Environment variables
+1. Searches for up to five useful topics using the official-domain registry in `editorial/config.mjs`.
+2. Rejects duplicate titles and overlapping search intent against `content/vulture-watch/index.json`.
+3. Drafts each article with the required schema and a claim-level source ledger.
+4. Fetches each source, records retrieval time and rejects non-official or unreachable sources.
+5. Runs deterministic and model-based quality review.
+6. Stores all run output as a private GitHub Actions artifact for 30 days.
+7. Commits only the strongest approved standard article, its source record and dashboard state.
+8. Opens a **draft pull request**. Nothing is merged or published automatically during launch.
 
-No secret or required runtime variables are used by the current app. `.env.example` contains only an optional public site URL variable with an empty value.
+The pipeline never generates more than five drafts per run and never advances more than one standard article to a pull request.
 
-Never commit `.env`, `.env.local`, credentials, API keys, access tokens, or passwords.
+## GitHub configuration
 
-## Hosting linkage
+Add this Actions secret in the repository:
 
-`.openai/hosting.json` contains the non-secret project identifier for the existing hosted Cancel Vulture Site. Keeping it allows supported OpenAI Sites tooling to recognize the linked project. Local development does not depend on it beyond the bundled hosting configuration.
+- `OPENAI_API_KEY`
 
-Do not create a new Site or redeploy unless you intentionally want to publish a new version.
+Optional repository variable:
 
-## Data and trust notes
+- `OPENAI_MODEL` (defaults to `gpt-5.6-sol`)
 
-- Prices and savings are estimates and may vary by plan, tax, currency, and region.
-- Cancellation flows change; the included guide UI uses clearly labelled templates and does not claim unverified provider-specific steps.
-- Cancel Vulture is not financial advice.
+Recommended launch controls:
 
+- Protect the default branch.
+- Require at least one approving review.
+- Require the build/test workflow to pass.
+- Disable auto-merge for editorial pull requests.
+- Add a CODEOWNERS rule for `content/vulture-watch/**` if a specific editor must approve.
+
+## Expedited price alerts
+
+Run **Vulture Watch expedited price alert** from GitHub Actions and supply:
+
+- Company name
+- Official source URL
+- Effective date in `YYYY-MM-DD` format
+
+The workflow rejects domains outside the official registry and refuses alerts without an effective date. It still opens a draft pull request for manual review.
+
+## Content storage
+
+- `content/vulture-watch/index.json` — duplicate-detection and publication ledger
+- `content/vulture-watch/articles/*.json` — complete article documents
+- `content/vulture-watch/sources/*.sources.json` — URLs, retrieval timestamps and extracted claims
+- `app/vulture-watch/generated.ts` — build-safe dashboard and article data generated by the pipeline
+- `.editorial-output/` — temporary run logs and all draft evaluations; uploaded as a workflow artifact and not committed
+
+The dashboard is available at `/vulture-watch`. Approved article documents render at `/vulture-watch/[slug]` after their pull request is merged and deployed.
+
+## Failure behavior
+
+Network and API calls retry transient failures. A failed pipeline exits non-zero and opens no pull request. Articles with insufficient official evidence receive manual-verification or rejected status. Source validation, duplicate detection, internal-link validation and the production build all run before a pull request is opened.
+
+## Hosting
+
+The project is linked to OpenAI Sites through `.openai/hosting.json`. Runtime secrets belong in GitHub Actions or the hosting platform, never in source control.
