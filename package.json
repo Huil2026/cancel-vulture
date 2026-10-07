@@ -9,9 +9,13 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "editorial:daily": "node editorial/pipeline.mjs",
+    "editorial:alert": "node editorial/alert.mjs",
+    "editorial:manual": "node editorial/manual.mjs",
+    "editorial:validate": "node editorial/validate.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

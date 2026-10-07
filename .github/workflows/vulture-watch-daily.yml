@@ -1,0 +1,62 @@
+name: Vulture Watch daily editorial run
+
+on:
+  schedule:
+    - cron: "15 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: vulture-watch-editorial
+  cancel-in-progress: false
+
+jobs:
+  editorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Optional AI research, drafting and review
+        run: npm run editorial:daily
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5.6-sol' }}
+      - name: Validate source records
+        run: npm run editorial:validate
+      - name: Build and test
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vulture-watch-run-${{ github.run_id }}
+          path: .editorial-output
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Open strongest-draft PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if git diff --quiet -- content/vulture-watch app/vulture-watch/generated.ts; then
+            echo "No approved draft selected. This is expected when OPENAI_API_KEY is not configured."
+            exit 0
+          fi
+          branch="automation/vulture-watch-${GITHUB_RUN_ID}"
+          git config user.name "cancel-vulture-editorial-bot"
+          git config user.email "editorial-bot@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add content/vulture-watch app/vulture-watch/generated.ts
+          git commit -m "Add Vulture Watch editorial candidate"
+          git push origin "$branch"
+          gh pr create --draft --base "${GITHUB_REF_NAME}" --head "$branch" --title "Vulture Watch: editorial candidate $(date -u +%F)" --body-file editorial/pr-body.md
+
