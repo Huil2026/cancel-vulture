@@ -31,3 +31,29 @@ test("server-renders the editorial dashboard with quality guardrails", async () 
   assert.match(html, /microsoft-clarity/);
   assert.match(html, /GoogleAnalytics/);
 });
+
+test("server-renders the regional availability module", async () => {
+  const response = await render("/check-my-area");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Check my area/i);
+  assert.match(html, /exact address eligibility/i);
+});
+
+test("server-renders a service record with verification labels", async () => {
+  const response = await render("/services/hp-instant-ink");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /HP Instant Ink/);
+  assert.match(html, /Verified method available/);
+  assert.match(html, /Official provider source/);
+});
+
+test("server-renders the verification queue", async () => {
+  const response = await render("/admin/verification-queue");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Verification Queue/);
+  assert.match(html, /No verified cancellation method/);
+  assert.match(html, /30–60 days/);
+});

@@ -2,6 +2,8 @@
 
 Cancel Vulture is a subscription audit app with **Vulture Watch**, an evidence-first editorial system for cancellation guides, price alerts, fee warnings, refund policies, free trials, alternatives and consumer education.
 
+The MVP catalog also covers recurring household services: printer plans, home internet, mobile plans, delivery memberships, news, education, cloud storage, security monitoring and other recurring bills. New provider records are region- and plan-aware. Missing facts display as **Not yet verified** instead of being inferred.
+
 Vulture Watch is manual-first. It builds and publishes articles normally without an OpenAI API key. AI discovery and drafting are optional enhancements that can be enabled later without changing the content format or publishing workflow.
 
 ## Local setup
@@ -63,6 +65,17 @@ Vulture Watch inherits the sitewide analytics from the root application layout:
 - Microsoft Clarity: the existing Cancel Vulture project ID is reused.
 
 No new tracking properties or IDs are created. Initial page loads and client-side route changes are tracked across the homepage, `/vulture-watch` and article routes. Keep the shared integration in `app/layout.tsx` and `app/analytics.tsx` so new routes inherit it automatically.
+
+## Service catalog and verification
+
+- `/` → **My Subs** contains the expanded catalog and user-local subscription audit.
+- `/services/[slug]` shows plan, region, price type, price freshness, cancellation method and official sources.
+- `/check-my-area` offers provider-owned availability links and labels all results as likely until a provider confirms the exact address.
+- `/admin/verification-queue` surfaces missing regional data, unverified prices, missing official sources and cancellation methods awaiting review.
+
+The schema in `db/schema.ts` defines `provider_plans`, `service_prices`, `cancellation_methods`, source records, regions, billing platforms and verification reports. Hosting currently has no D1 binding, so the catalog seed in `app/catalog.ts` is the active MVP data source. Add a D1 binding and migration before treating the admin queue as a multi-user database workflow.
+
+Freshness targets are 30–60 days for price records and 60–90 days for cancellation methods. A report of a moved cancel button, changed price, new fee or changed phone number should immediately move the record to **Needs Review**.
 
 ## Content storage
 
